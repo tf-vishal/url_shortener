@@ -1,31 +1,18 @@
 # Use a base image
-FROM ubuntu:latest
+FROM maven:3.9.9-amazoncorretto-21 AS build
 
-
-# Install Java 21
-RUN apt-get update \
-    && apt-get install -y wget \
-    && wget -qO- wget -qO- https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz | tar -xz -C /usr/local/ \
-    && mv /usr/local/jdk-21* /usr/local/java \
-    && rm -rf /var/lib/apt/lists/*
-
-
-# Set Java environment variables
-ENV JAVA_HOME=/usr/local/java
-ENV PATH="$JAVA_HOME/bin:$PATH"
-
-
-# Set the working directory in the container
 WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline
 
 
-# Copy JAR file into the container
-COPY target/urlshortener-0.0.1-SNAPSHOT.jar app.jar
+COPY src ./src
+RUN mvn clean package -DskipTests
 
+FROM openjdk:21-jdk-slim
 
-# Expose the application port
-EXPOSE 8080
+COPY --from=build /app/target/urlshortener-0.0.1-SNAPSHOT.jar app.jar
 
+EXPOSE 8000
 
-# Command to run the application
-CMD ["java", "-jar", "app.jar"]
+CMD [ "java", "-jar","app.jar" ]

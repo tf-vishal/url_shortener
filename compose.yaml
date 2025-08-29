@@ -5,6 +5,7 @@ services:
       - '6379:6379'
     networks:
       - backend_default
+    restart: always
   backend:
     build:
       context: backend/
@@ -17,6 +18,12 @@ services:
       - SPRING_DATA_REDIS_PORT=6379
     networks:
       - backend_default
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/shorten"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build:
@@ -27,6 +34,13 @@ services:
       - backend
     networks:
       - backend_default
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl","-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 networks:
   backend_default:
